@@ -22,7 +22,7 @@ public class Pawn extends Unit implements Moving {
         super(world, x, y,
             64,
             30);
-        this.movementComponent = new UnitMovementComponent(this, 100f);
+        this.movementComponent = new UnitMovementComponent(this, 100);
 
         idleAnimation = createAnimation(
             IDLE_SPRITE_PATH,

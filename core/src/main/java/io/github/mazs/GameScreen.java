@@ -32,6 +32,52 @@ public class GameScreen implements Screen {
         this.game = game;
     }
 
+    /**
+     * Create various obstacle patterns to test pathfinding algorithms.
+     * Patterns include: vertical walls, horizontal walls with gaps, clusters, and mazes.
+     */
+    private void createObstaclePatterns(WorldRts world, float centerX, float centerY) {
+        final int TILE = WorldRts.TILE_SIZE;
+
+        // Pattern 1: Vertical wall (forces units to go around)
+        for (int i = 0; i < 8; i++) {
+            world.addUnit(new Tree(world, centerX, centerY - 60 + i * TILE));
+        }
+
+        // Pattern 2: Horizontal wall with gaps (tests gap finding)
+        for (int i = 0; i < 12; i++) {
+            // Create gaps at positions 3 and 8
+            if (i != 3 && i != 8) {
+                world.addUnit(new Tree(world, centerX + 40 + i * TILE, centerY + 60));
+            }
+        }
+
+        // Pattern 3: Dense cluster/forest (tests navigation through tight spaces)
+        for (int x = 0; x < 4; x++) {
+            for (int y = 0; y < 4; y++) {
+                // Create a checkerboard pattern for some navigable space
+                if ((x + y) % 2 == 0) {
+                    world.addUnit(new Tree(world, centerX - 80 + x * TILE, centerY - 80 + y * TILE));
+                }
+            }
+        }
+
+        // Pattern 4: L-shaped corridor (tests corner navigation)
+        // Vertical part
+        for (int i = 0; i < 5; i++) {
+            world.addUnit(new Tree(world, centerX + 100, centerY - 40 + i * TILE));
+        }
+        // Horizontal part
+        for (int i = 0; i < 5; i++) {
+            world.addUnit(new Tree(world, centerX + 100 + i * TILE, centerY + 40));
+        }
+
+        // Pattern 5: Scattered individual obstacles
+        world.addUnit(new Tree(world, centerX - 50, centerY + 20));
+        world.addUnit(new Tree(world, centerX + 30, centerY - 20));
+        world.addUnit(new Tree(world, centerX - 20, centerY - 50));
+    }
+
     @Override
     public void show() {
         camera = new OrthographicCamera();
@@ -46,13 +92,13 @@ public class GameScreen implements Screen {
 
         float unitX = WORLD_WIDTH / 2;
         float unitY = WORLD_HEIGHT / 2;
-        Unit pawn1 = new Pawn(world, unitX, unitY);
-        Unit pawn2 = new Pawn(world, unitX + 100, unitY + 100);
-        world.addUnit(new Tree(world, unitX - 50, unitY - 50));
-        world.addUnit(new Tree(world, unitX - 85, unitY - 50));
+
+        // Create test units
+        Unit pawn1 = new Pawn(world, unitX + 150, unitY);
         world.addUnit(pawn1);
-        world.addUnit(pawn2);
-        world.addUnit(new Tree(world, unitX + 50, unitY + 50));
+
+        // Create obstacle patterns for testing pathfinding
+        createObstaclePatterns(world, unitX, unitY);
 
         stats = new StatsComponent();
 

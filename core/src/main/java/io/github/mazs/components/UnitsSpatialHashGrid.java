@@ -1,7 +1,6 @@
 package io.github.mazs.components;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import io.github.mazs.units.Unit;
@@ -15,11 +14,9 @@ public class UnitsSpatialHashGrid {
     private final int cellSize;
     private final Map<Long, List<Unit>> grid = new HashMap<>();
     private final Map<Unit, Long> unitToCellKey = new HashMap<>();
-    private final AssertsManager assertsManager;
 
-    public UnitsSpatialHashGrid(int cellSize, AssertsManager assertsManager) {
+    public UnitsSpatialHashGrid(int cellSize) {
         this.cellSize = cellSize;
-        this.assertsManager = assertsManager;
     }
 
     private long getCellKey(float x, float y) {
@@ -122,9 +119,7 @@ public class UnitsSpatialHashGrid {
         );
     }
 
-    public void drawDebug(SpriteBatch batch) {
-        Texture whitePixel = assertsManager.getWhitePixel();
-
+    public void drawDebug(SpriteBatch batch,DebugDrawComponent debugDraw) {
         for (Map.Entry<Long, List<Unit>> entry : grid.entrySet()) {
             long key = entry.getKey();
             int cellX = getCellX(key);
@@ -142,11 +137,8 @@ public class UnitsSpatialHashGrid {
 
             float worldX = cellX * cellSize;
             float worldY = cellY * cellSize;
-            batch.setColor(color);
-            batch.draw(whitePixel, worldX, worldY, cellSize, cellSize);
+            debugDraw.drawRectangleImmediate(batch, worldX, worldY, cellSize, cellSize, color);
         }
-
-        batch.setColor(Color.WHITE);
     }
 
     public void dispose() {

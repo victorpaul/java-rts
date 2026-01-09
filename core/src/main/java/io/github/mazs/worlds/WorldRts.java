@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-    public class WorldRts {
+public class WorldRts {
     private static final int WORLD_WIDTH_TILES = 40;
     private static final int WORLD_HEIGHT_TILES = 23;
 
@@ -25,13 +25,13 @@ import java.util.List;
     private List<Unit> units = new ArrayList<>();
     private List<AnimationEffect> effects = new ArrayList<>();
 
-    public boolean debug = false;
+    public boolean debug = true;
     private UnitsSpatialHashGrid spatialGrid;
     public final AssertsManager assertsManager = new AssertsManager();
     private DebugDrawComponent debugDraw;
 
     public WorldRts() {
-        spatialGrid = new UnitsSpatialHashGrid(TILE_SIZE, assertsManager);
+        spatialGrid = new UnitsSpatialHashGrid(TILE_SIZE);
         debugDraw = new DebugDrawComponent(assertsManager);
         tilesetTexture = new Texture("TinySwords/Terrain/Tileset/Tilemap_color1.png");
 
@@ -64,6 +64,10 @@ import java.util.List;
                 effectIterator.remove();
             }
         }
+
+        if (debug) {
+            debugDraw.update(delta);
+        }
     }
 
     public void render(SpriteBatch batch) {
@@ -80,10 +84,13 @@ import java.util.List;
             .forEach(unit -> unit.render(batch));
         effects.forEach(effect -> effect.render(batch));
 
-        if(debug) {
-            spatialGrid.drawDebug(batch);
+        if (debug) {
+            spatialGrid.drawDebug(batch, debugDraw);
             units.forEach(unit -> unit.drawDebug(batch));
+            debugDraw.render(batch);
         }
+
+
     }
 
     public int getWorldWidthTiles() {
