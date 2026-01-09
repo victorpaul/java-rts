@@ -51,19 +51,15 @@ public class DebugDrawComponent {
         while (rectIterator.hasNext()) {
             DebugRectangle rect = rectIterator.next();
             rect.ttl -= delta;
-            if (rect.ttl <= 0) {
-                rectIterator.remove();
-            }
         }
+        rectangles.removeIf(rect -> rect.ttl <= 0);
 
         Iterator<DebugLine> lineIterator = lines.iterator();
         while (lineIterator.hasNext()) {
             DebugLine line = lineIterator.next();
             line.ttl -= delta;
-            if (line.ttl <= 0) {
-                lineIterator.remove();
-            }
         }
+        lines.removeIf(line -> line.ttl <= 0);
     }
 
     public void render(SpriteBatch batch) {

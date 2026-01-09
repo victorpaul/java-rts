@@ -2,10 +2,8 @@ package io.github.mazs.movement;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
-import com.sun.tools.javac.util.List;
 import io.github.mazs.components.UnitsSpatialHashGrid;
 import io.github.mazs.units.Unit;
-import io.github.mazs.worlds.WorldRts;
 
 import static io.github.mazs.worlds.WorldRts.TILE_SIZE;
 
@@ -38,13 +36,26 @@ public class Warcraft2MovementStrategy implements IMovementStrategy {
         Vector2 directionToTarget = calculateDirection(currentPosition, targetFinalPosition);
         Vector2 nextTile = getTileInDirection(owner, currentPosition, directionToTarget, 0);
 
+        Vector2 resultTile;
+
         // Step 2: If it is free, return it
         if (!isTileBlocked(owner, nextTile)) {
             commitment = Commitment.NO_COMMITMENT;
-            return nextTile;
+            resultTile = nextTile;
+        } else {
+            // Calculate direction to the obstacle, not the far target
+            Vector2 directionToObstacle = calculateDirection(currentPosition, nextTile);
+            resultTile = avoidObstacle(owner, currentPosition, directionToObstacle);
         }
 
-        return avoidObstacle(owner, currentPosition, directionToTarget);
+        // Update lastPosition only here, before returning
+        lastPosition.set(currentPosition);
+        sg.snapToGrid(lastPosition);
+        owner.getWorld().getDebugDraw().drawRectangle(
+            lastPosition, TILE_SIZE * 0.9f,
+            new Color(0, 0, 1, 0.3f), 0.4f);
+
+        return resultTile;
     }
 
     private Vector2 avoidObstacle(Unit owner, Vector2 currentPosition, Vector2 directionToTarget) {
@@ -57,9 +68,7 @@ public class Warcraft2MovementStrategy implements IMovementStrategy {
     }
 
     private Vector2 handleNoCommitment(Unit owner, Vector2 currentPosition, Vector2 directionToTarget) {
-        UnitsSpatialHashGrid sg = owner.getWorld().getSpatialGrid();
-
-        for (int d = 45; d <= (45 * 2); d += 45) {
+        for (int d = 45; d <= (45 * 3); d += 45) {
             Vector2 leftTile = getTileInDirection(owner, currentPosition, directionToTarget, d);
             Vector2 rightTile = getTileInDirection(owner, currentPosition, directionToTarget, -d);
 
@@ -77,16 +86,16 @@ public class Warcraft2MovementStrategy implements IMovementStrategy {
                 debugTime);
 
             if (!isTileBlocked(owner, rightTile)) {
-                commitment = Commitment.TURN_RIGHT;
-                lastPosition.set(currentPosition);
-                sg.snapToGrid(lastPosition);
+                if (d >= 90) {
+                    commitment = Commitment.TURN_RIGHT;
+                }
                 return rightTile;
             }
 
-            if (!isTileBlocked(owner, rightTile)) {
-                commitment = Commitment.TURN_LEFT;
-                lastPosition.set(currentPosition);
-                sg.snapToGrid(lastPosition);
+            if (!isTileBlocked(owner, leftTile)) {
+                if (d >= 90) {
+                    commitment = Commitment.TURN_LEFT;
+                }
                 return leftTile;
             }
 
@@ -96,9 +105,6 @@ public class Warcraft2MovementStrategy implements IMovementStrategy {
     }
 
     private Vector2 handleCommitment(Unit owner, Vector2 currentPosition, Vector2 directionToTarget) {
-
-        UnitsSpatialHashGrid sg = owner.getWorld().getSpatialGrid();
-
         float[] anglesToCheck = new float[]{45f, 90f, 0f};
 
         for (int i = 0; i < anglesToCheck.length; i++) {
@@ -109,7 +115,7 @@ public class Warcraft2MovementStrategy implements IMovementStrategy {
 
             float debugTime = 3;
             // debug directions
-            owner.getWorld().getDebugDraw().drawLine(currentPosition, followTile, Color.ORANGE, debugTime);
+            owner.getWorld().getDebugDraw().drawLine(currentPosition, followTile, Color.BROWN, debugTime);
 
             // debug collision
             owner.getWorld().getDebugDraw().drawRectangle(followTile, TILE_SIZE * 0.5f,
@@ -118,13 +124,12 @@ public class Warcraft2MovementStrategy implements IMovementStrategy {
 
 
             if (!isTileBlocked(owner, followTile)) {
-                lastPosition.set(currentPosition);
-                sg.snapToGrid(lastPosition);
                 return followTile;
             }
 
 
         }
+        commitment = Commitment.NO_COMMITMENT;
         return currentPosition;
     }
 
@@ -143,7 +148,12 @@ public class Warcraft2MovementStrategy implements IMovementStrategy {
 
     private boolean isTileBlocked(Unit owner, Vector2 tilePosition) {
         Unit unitAtTile = owner.getWorld().getSpatialGrid().findUnitAt(tilePosition.x, tilePosition.y);
-        return unitAtTile != null && unitAtTile != owner;
+        boolean hasUnit = unitAtTile != null && unitAtTile != owner;
+
+        // Prevent moving back to the exact tile we just came from
+        boolean isBacktracking = lastPosition.epsilonEquals(tilePosition, 0.1f);
+
+        return hasUnit || isBacktracking;
     }
 
 }
