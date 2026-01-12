@@ -3,10 +3,12 @@ package io.github.mazs.worlds;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import io.github.mazs.components.AssertsManager;
 import io.github.mazs.components.DebugDrawComponent;
 import io.github.mazs.components.UnitsSpatialHashGrid;
 import io.github.mazs.effects.AnimationEffect;
+import io.github.mazs.movement.hpa.ClustersManager;
 import io.github.mazs.units.Unit;
 
 import java.util.ArrayList;
@@ -26,12 +28,21 @@ public class WorldRts {
     private List<AnimationEffect> effects = new ArrayList<>();
 
     public boolean debug = true;
+    private ClustersManager clustersManager;
     private UnitsSpatialHashGrid spatialGrid;
     public final AssertsManager assertsManager = new AssertsManager();
     private DebugDrawComponent debugDraw;
 
     public WorldRts() {
         spatialGrid = new UnitsSpatialHashGrid(TILE_SIZE);
+        clustersManager = new ClustersManager(
+            TILE_SIZE,
+            10, spatialGrid,
+            new Vector2(
+                WORLD_WIDTH_TILES * TILE_SIZE,
+                WORLD_HEIGHT_TILES * TILE_SIZE
+            )
+        );
         debugDraw = new DebugDrawComponent(assertsManager);
         tilesetTexture = new Texture("TinySwords/Terrain/Tileset/Tilemap_color1.png");
 
@@ -66,6 +77,7 @@ public class WorldRts {
         }
 
         if (debug) {
+            clustersManager.debug(debugDraw);
             debugDraw.update(delta);
         }
     }
@@ -115,6 +127,10 @@ public class WorldRts {
 
     public UnitsSpatialHashGrid getSpatialGrid() {
         return spatialGrid;
+    }
+
+    public ClustersManager getClustersManager() {
+        return clustersManager;
     }
 
     public DebugDrawComponent getDebugDraw() {

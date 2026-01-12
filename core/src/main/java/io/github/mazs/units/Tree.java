@@ -10,7 +10,7 @@ public class Tree extends Unit {
 
     public Tree(WorldRts world, float x, float y) {
         super(world, x, y,
-            128,
+            64,
             20);
         idleAnimation = createAnimation(
             TEXTURE_PATH,

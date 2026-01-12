@@ -33,49 +33,99 @@ public class GameScreen implements Screen {
     }
 
     /**
-     * Create various obstacle patterns to test pathfinding algorithms.
-     * Patterns include: vertical walls, horizontal walls with gaps, clusters, and mazes.
+     * Create tree border and structured obstacle patterns (T, L, I shapes).
      */
     private void createObstaclePatterns(WorldRts world, float centerX, float centerY) {
         final int TILE = WorldRts.TILE_SIZE;
+        final int MAP_WIDTH_TILES = 40;
+        final int MAP_HEIGHT_TILES = 23;
 
-        // Pattern 1: Vertical wall (forces units to go around)
+        // Tree border around the map
+        // Bottom border
+        for (int x = 0; x < MAP_WIDTH_TILES; x++) {
+            world.addUnit(new Tree(world, x * TILE + TILE / 2f, TILE / 2f));
+        }
+        // Top border
+        for (int x = 0; x < MAP_WIDTH_TILES; x++) {
+            world.addUnit(new Tree(world, x * TILE + TILE / 2f, (MAP_HEIGHT_TILES - 1) * TILE + TILE / 2f));
+        }
+        // Left border (excluding corners already placed)
+        for (int y = 1; y < MAP_HEIGHT_TILES - 1; y++) {
+            world.addUnit(new Tree(world, TILE / 2f, y * TILE + TILE / 2f));
+        }
+        // Right border (excluding corners already placed)
+        for (int y = 1; y < MAP_HEIGHT_TILES - 1; y++) {
+            world.addUnit(new Tree(world, (MAP_WIDTH_TILES - 1) * TILE + TILE / 2f, y * TILE + TILE / 2f));
+        }
+
+        // T-shaped obstacle (top-left area)
+        float tX = centerX - 120;
+        float tY = centerY + 40;
+        // Horizontal bar of T
+        for (int i = 0; i < 7; i++) {
+            world.addUnit(new Tree(world, tX + i * TILE, tY));
+        }
+        // Vertical stem of T
+        for (int i = 1; i < 5; i++) {
+            world.addUnit(new Tree(world, tX + 3 * TILE, tY - i * TILE));
+        }
+
+        // L-shaped obstacle (top-right area)
+        float lX = centerX + 80;
+        float lY = centerY + 40;
+        // Vertical part of L
+        for (int i = 0; i < 6; i++) {
+            world.addUnit(new Tree(world, lX, lY - i * TILE));
+        }
+        // Horizontal part of L
+        for (int i = 1; i < 5; i++) {
+            world.addUnit(new Tree(world, lX + i * TILE, lY - 5 * TILE));
+        }
+
+        // I-shaped obstacle (vertical, center-left)
+        float iX = centerX - 80;
+        float iY = centerY - 60;
         for (int i = 0; i < 8; i++) {
-            world.addUnit(new Tree(world, centerX, centerY - 60 + i * TILE));
+            world.addUnit(new Tree(world, iX, iY + i * TILE));
         }
 
-        // Pattern 2: Horizontal wall with gaps (tests gap finding)
-        for (int i = 0; i < 12; i++) {
-            // Create gaps at positions 3 and 8
-            if (i != 3 && i != 8) {
-                world.addUnit(new Tree(world, centerX + 40 + i * TILE, centerY + 60));
-            }
+        // I-shaped obstacle (horizontal, bottom-center)
+        float iX2 = centerX - 40;
+        float iY2 = centerY - 60;
+        for (int i = 0; i < 10; i++) {
+            world.addUnit(new Tree(world, iX2 + i * TILE, iY2));
         }
 
-        // Pattern 3: Dense cluster/forest (tests navigation through tight spaces)
-        for (int x = 0; x < 4; x++) {
-            for (int y = 0; y < 4; y++) {
-                // Create a checkerboard pattern for some navigable space
-                if ((x + y) % 2 == 0) {
-                    world.addUnit(new Tree(world, centerX - 80 + x * TILE, centerY - 80 + y * TILE));
-                }
-            }
-        }
-
-        // Pattern 4: L-shaped corridor (tests corner navigation)
-        // Vertical part
+        // T-shaped obstacle (center of map)
+        float centerTX = centerX +200;
+        float centerTY = centerY+200;
+        // Horizontal bar of T
         for (int i = 0; i < 5; i++) {
-            world.addUnit(new Tree(world, centerX + 100, centerY - 40 + i * TILE));
+            world.addUnit(new Tree(world, centerTX - 2 * TILE + i * TILE, centerTY));
+        }
+        // Vertical stem of T
+        for (int i = 1; i < 4; i++) {
+            world.addUnit(new Tree(world, centerTX, centerTY - i * TILE));
+        }
+
+        // L-shaped obstacle (top-right, near corner)
+        float topRightLX = centerX + 340;
+        float topRightLY = centerY + 200;
+        // Vertical part
+        for (int i = 0; i < 4; i++) {
+            world.addUnit(new Tree(world, topRightLX, topRightLY - i * TILE));
         }
         // Horizontal part
-        for (int i = 0; i < 5; i++) {
-            world.addUnit(new Tree(world, centerX + 100 + i * TILE, centerY + 40));
+        for (int i = 1; i < 4; i++) {
+            world.addUnit(new Tree(world, topRightLX - i * TILE, topRightLY));
         }
 
-        // Pattern 5: Scattered individual obstacles
-        world.addUnit(new Tree(world, centerX - 50, centerY + 20));
-        world.addUnit(new Tree(world, centerX + 30, centerY - 20));
-        world.addUnit(new Tree(world, centerX - 20, centerY - 50));
+        // Small I-shaped obstacle (top-right area)
+        float topRightIX = centerX + 120;
+        float topRightIY = centerY + 50;
+        for (int i = 0; i < 5; i++) {
+            world.addUnit(new Tree(world, topRightIX + i * TILE, topRightIY));
+        }
     }
 
     @Override
@@ -99,7 +149,7 @@ public class GameScreen implements Screen {
 
         // Create obstacle patterns for testing pathfinding
         createObstaclePatterns(world, unitX, unitY);
-
+        world.getClustersManager().generateClusters();
         stats = new StatsComponent();
 
         rtsController = new RtsController(world, camera, stats);

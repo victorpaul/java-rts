@@ -69,6 +69,10 @@ public class UnitsSpatialHashGrid {
         }
     }
 
+    public Unit findUnitAt(Vector2 tile) {
+        return findUnitAt(tile.x, tile.y);
+    }
+
     public Unit findUnitAt(float x, float y) {
         long key = getCellKey(x, y);
         List<Unit> cell = grid.get(key);
@@ -119,7 +123,7 @@ public class UnitsSpatialHashGrid {
         );
     }
 
-    public void drawDebug(SpriteBatch batch,DebugDrawComponent debugDraw) {
+    public void drawDebug(SpriteBatch batch, DebugDrawComponent debugDraw) {
         for (Map.Entry<Long, List<Unit>> entry : grid.entrySet()) {
             long key = entry.getKey();
             int cellX = getCellX(key);
@@ -143,5 +147,4 @@ public class UnitsSpatialHashGrid {
 
     public void dispose() {
     }
-
 }
