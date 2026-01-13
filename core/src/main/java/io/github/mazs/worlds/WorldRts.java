@@ -16,8 +16,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class WorldRts {
-    private static final int WORLD_WIDTH_TILES = 40;
-    private static final int WORLD_HEIGHT_TILES = 23;
+    private static final int WORLD_WIDTH_TILES = 50;
+    private static final int WORLD_HEIGHT_TILES = 50;
 
     public static final int TILE_SIZE = 16;
 
@@ -43,7 +43,7 @@ public class WorldRts {
                 WORLD_HEIGHT_TILES * TILE_SIZE
             )
         );
-        debugDraw = new DebugDrawComponent(assertsManager);
+        debugDraw = DebugDrawComponent.getInstance(assertsManager);
         tilesetTexture = new Texture("TinySwords/Terrain/Tileset/Tilemap_color1.png");
 
         grassTile = new TextureRegion(tilesetTexture, 32, 16, 16, 16);
@@ -77,7 +77,7 @@ public class WorldRts {
         }
 
         if (debug) {
-            clustersManager.debug(debugDraw);
+            clustersManager.debug();
             debugDraw.update(delta);
         }
     }

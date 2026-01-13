@@ -2,6 +2,7 @@ package io.github.mazs.movement;
 
 import com.badlogic.gdx.math.Vector2;
 import io.github.mazs.components.UnitsSpatialHashGrid;
+import io.github.mazs.movement.hpa.TileUtils;
 import io.github.mazs.units.Unit;
 
 import static io.github.mazs.worlds.WorldRts.TILE_SIZE;
@@ -56,7 +57,7 @@ public class Warcraft2MovementStrategy implements IMovementStrategy {
 
         // Track position for next frame
         lastPosition.set(currentPosition);
-        sg.snapToGrid(lastPosition);
+        TileUtils.snapToTileCenterInPlace(lastPosition);
 
         return resultTile;
     }
@@ -134,7 +135,7 @@ public class Warcraft2MovementStrategy implements IMovementStrategy {
         Vector2 rotatedDirection = new Vector2(direction).rotateDeg(degrees);
         float moveDistance = TILE_SIZE;
         Vector2 tilePosition = new Vector2(currentPosition).add(rotatedDirection.x * moveDistance, rotatedDirection.y * moveDistance);
-        owner.getWorld().getSpatialGrid().snapToGrid(tilePosition);
+        TileUtils.snapToTileCenterInPlace(tilePosition);
         return tilePosition;
     }
 

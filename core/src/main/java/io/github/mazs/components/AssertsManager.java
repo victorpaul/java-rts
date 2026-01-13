@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +13,7 @@ public class AssertsManager {
 
     private final Map<String, Texture> cache = new HashMap<>();
     private Texture whitePixel;
+    private BitmapFont defaultFont;
 
     public Texture getTexture(String path) {
         return cache.computeIfAbsent(path, p -> new Texture(Gdx.files.internal(p)));
@@ -28,6 +30,14 @@ public class AssertsManager {
         return whitePixel;
     }
 
+    public BitmapFont getDefaultFont() {
+        if (defaultFont == null) {
+            defaultFont = new BitmapFont();
+            defaultFont.getData().setScale(0.5f);
+        }
+        return defaultFont;
+    }
+
     public void dispose() {
         for (Texture texture : cache.values()) {
             texture.dispose();
@@ -37,6 +47,11 @@ public class AssertsManager {
         if (whitePixel != null) {
             whitePixel.dispose();
             whitePixel = null;
+        }
+
+        if (defaultFont != null) {
+            defaultFont.dispose();
+            defaultFont = null;
         }
     }
 }

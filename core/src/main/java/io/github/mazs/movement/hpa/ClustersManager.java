@@ -5,10 +5,10 @@ import com.badlogic.gdx.math.Vector2;
 import io.github.mazs.components.DebugDrawComponent;
 import io.github.mazs.components.UnitsSpatialHashGrid;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public class ClustersManager {
+public class ClustersManager implements PathfindingGraph {
 
     private final Map<Long, Cluster> clustersMap;
     private final int cellSize;
@@ -43,9 +43,10 @@ public class ClustersManager {
             }
         }
 
-        // Second: Generate gates for all clusters (now all neighbors exist)
+        // Generate gates for all clusters with interlinks
         for (Cluster cluster : clustersMap.values()) {
-            cluster.generateWalkableBordersSegments();
+            cluster.generateGates();
+            cluster.calculateGatesLinks();
         }
     }
 
@@ -70,10 +71,75 @@ public class ClustersManager {
         return clustersMap.get(key);
     }
 
-    public void debug(DebugDrawComponent debugDrawComponent) {
-        clustersMap.values().forEach(cluster -> {
-            cluster.debug(debugDrawComponent);
-        });
+    public void debug() {
+        clustersMap.forEach((key, cluster) -> cluster.debug());
     }
 
+    @Override
+    public boolean isGoalReached(Vector2 position, Vector2 end) {
+        Cluster currentCluster = getClusterByTilePosition(position);
+        Cluster goalCluster = getClusterByTilePosition(end);
+        return currentCluster == goalCluster;
+    }
+
+    @Override
+    public void addToClosedSet(Set<Long> closedSet, Vector2 position) {
+        // todo, improve this one if performance issue
+        // stupid workaround to mark node as passed, as node is made of two gates actually
+        // that are on the edges of cluster touching each another
+        Optional.of(getClusterByTilePosition(position))
+            .map(cluster -> cluster.getGateByPosition(position))
+            .map(gate -> gate.getNeighborGate(this))
+            .ifPresent(neighborGate -> {
+                PathfindingGraph.super.addToClosedSet(closedSet, neighborGate.getMiddlePoint());
+            });
+
+        PathfindingGraph.super.addToClosedSet(closedSet, position);
+    }
+
+    @Override
+    public List<Vector2> getNeighbors(Vector2 location) {
+        Cluster cluster = getClusterByTilePosition(location);
+
+        // Check if location is within valid cluster bounds
+        if (cluster == null) {
+            return new LinkedList<>();
+        }
+
+        Gate gate = cluster.getGateByPosition(location);
+        if (gate != null) {
+            // we got gates by location, return gates we can reach from neighbor clusters
+            return gate.getReachableGates().keySet().stream()
+                .map(g -> g.getNeighborGate(this))
+                .filter(Objects::nonNull)
+                .map(Gate::getMiddlePoint)
+                .collect(Collectors.toList());
+        } else {
+            // we are somewhere in the cluster
+            // lets calculate gates we can reach in the cluster and convert them to neighbor gates location
+            return cluster.getGates().stream().map(g -> {
+                    PathfindingResult pathResult = AStarPathfinder.findPath(
+                        cluster,
+                        location,
+                        g.getMiddlePoint()
+                    );
+                    return pathResult.isSuccess()
+                        ? g.getNeighborGate(this)
+                        : null;
+                })
+                .filter(Objects::nonNull)
+                .map(Gate::getMiddlePoint)
+                .collect(Collectors.toList());
+        }
+    }
+
+    @Override
+    public float getCost(Vector2 from, Vector2 to) {
+        return from.dst(to);
+    }
+
+    @Override
+    public float getHeuristic(Vector2 from, Vector2 to) {
+        return from.dst(to);
+    }
 }

@@ -1,6 +1,7 @@
 package io.github.mazs.movement;
 
 import com.badlogic.gdx.math.Vector2;
+import io.github.mazs.movement.hpa.TileUtils;
 import io.github.mazs.units.Unit;
 import io.github.mazs.worlds.WorldRts;
 
@@ -29,7 +30,7 @@ public class SimpleMovementStrategy implements IMovementStrategy {
         nextPosition.set(currentPosition).add(currentDirection.scl(moveDistance));
 
         // Snap to grid to get the tile center
-        owner.getWorld().getSpatialGrid().snapToGrid(nextPosition);
+        TileUtils.snapToTileCenterInPlace(nextPosition);
 
         return nextPosition;
     }

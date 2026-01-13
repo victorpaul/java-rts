@@ -13,6 +13,46 @@ public class DebugDrawComponent {
     private final AssertsManager assertsManager;
     private final List<DebugRectangle> rectangles = new ArrayList<>();
     private final List<DebugLine> lines = new ArrayList<>();
+    private final List<DebugText> texts = new ArrayList<>();
+
+    private static DebugDrawComponent instance;
+
+    public static DebugDrawComponent getInstance(AssertsManager assertsManager) {
+        if (instance == null) {
+            instance = new DebugDrawComponent(assertsManager);
+        }
+        return instance;
+    }
+
+    public static DebugDrawComponent getInstance() {
+        return instance;
+    }
+
+    private DebugDrawComponent(AssertsManager assertsManager) {
+        this.assertsManager = assertsManager;
+    }
+
+    public DebugDrawComponent drawPath(List<Vector2> path, Color green, float v) {
+        for (int i = 1; i < path.size(); i++) {
+            drawLine(path.get(i - 1), path.get(i), green, v);
+        }
+
+        return this;
+    }
+
+    private static class DebugText {
+        Vector2 position;
+        String text;
+        Color color;
+        float ttl;
+
+        DebugText(Vector2 position, String text, Color color, float ttl) {
+            this.position = new Vector2(position);
+            this.text = text;
+            this.color = new Color(color);
+            this.ttl = ttl;
+        }
+    }
 
     private static class DebugRectangle {
         float x, y, width, height;
@@ -42,10 +82,6 @@ public class DebugDrawComponent {
         }
     }
 
-    public DebugDrawComponent(AssertsManager assertsManager) {
-        this.assertsManager = assertsManager;
-    }
-
     public void update(float delta) {
         Iterator<DebugRectangle> rectIterator = rectangles.iterator();
         while (rectIterator.hasNext()) {
@@ -60,12 +96,19 @@ public class DebugDrawComponent {
             line.ttl -= delta;
         }
         lines.removeIf(line -> line.ttl <= 0);
+
+        Iterator<DebugText> textIterator = texts.iterator();
+        while (textIterator.hasNext()) {
+            DebugText text = textIterator.next();
+            text.ttl -= delta;
+        }
+        texts.removeIf(text -> text.ttl <= 0);
     }
 
     public void render(SpriteBatch batch) {
         for (DebugRectangle rect : rectangles) {
-            float drawX = rect.x-rect.width/2;
-            float drawY = rect.y-rect.height/2;
+            float drawX = rect.x - rect.width / 2;
+            float drawY = rect.y - rect.height / 2;
             drawRectangleImmediate(
                 batch,
                 drawX,
@@ -77,6 +120,10 @@ public class DebugDrawComponent {
         for (DebugLine line : lines) {
             drawLineImmediate(batch, line.from, line.to, line.color);
         }
+
+        for (DebugText text : texts) {
+            drawTextImmediate(batch, text.position, text.text, text.color);
+        }
     }
 
     public void drawPixel(SpriteBatch batch, float x, float y, Color color, float size) {
@@ -86,15 +133,22 @@ public class DebugDrawComponent {
         batch.setColor(Color.WHITE);
     }
 
-    public void drawRectangle(Vector2 xy, float size, Color color, float ttl) {
+    public DebugDrawComponent drawRectangle(Vector2 xy, float size, Color color, float ttl) {
         rectangles.add(new DebugRectangle(xy.x, xy.y, size, size, color, ttl));
+        return this;
     }
+
     public void drawRectangle(float x, float y, float width, float height, Color color, float ttl) {
         rectangles.add(new DebugRectangle(x, y, width, height, color, ttl));
     }
 
-    public void drawLine(Vector2 from, Vector2 to, Color color, float ttl) {
+    public DebugDrawComponent drawLine(Vector2 from, Vector2 to, Color color, float ttl) {
         lines.add(new DebugLine(from, to, color, ttl));
+        return this;
+    }
+
+    public void drawText(Vector2 position, String text, Color color, float ttl) {
+        texts.add(new DebugText(position, text, color, ttl));
     }
 
     public void drawRectangleImmediate(SpriteBatch batch, float x, float y, float width, float height, Color color) {
@@ -125,6 +179,12 @@ public class DebugDrawComponent {
             1, 1,
             false, false);
         batch.setColor(Color.WHITE);
+    }
+
+    private void drawTextImmediate(SpriteBatch batch, Vector2 position, String text, Color color) {
+        assertsManager.getDefaultFont().setColor(color);
+        assertsManager.getDefaultFont().draw(batch, text, position.x, position.y);
+        assertsManager.getDefaultFont().setColor(Color.WHITE);
     }
 
     public void dispose() {

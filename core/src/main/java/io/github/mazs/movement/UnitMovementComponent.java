@@ -1,6 +1,7 @@
 package io.github.mazs.movement;
 
 import com.badlogic.gdx.math.Vector2;
+import io.github.mazs.movement.hpa.TileUtils;
 import io.github.mazs.units.Unit;
 
 public class UnitMovementComponent {
@@ -62,7 +63,7 @@ public class UnitMovementComponent {
     public void moveTo(float x, float y) {
         movementStrategy.resetState();
         finalTargetPosition.set(x, y);
-        owner.getWorld().getSpatialGrid().snapToGrid(finalTargetPosition);
+        TileUtils.snapToTileCenterInPlace(finalTargetPosition);
         // Reset current tile to current position to trigger recalculation
         currentTargetTile.set(owner.getPosition());
     }
