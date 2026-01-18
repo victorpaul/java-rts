@@ -1,10 +1,11 @@
 package io.github.mazs.movement.hpa;
 
 import com.badlogic.gdx.math.Vector2;
+import io.github.mazs.components.TileUtils;
 
 import java.util.*;
 
-import static io.github.mazs.movement.hpa.TileUtils.positionToKey;
+import static io.github.mazs.components.TileUtils.positionToKey;
 
 public class AStarPathfinder {
 
@@ -23,6 +24,9 @@ public class AStarPathfinder {
             this.fCost = gCost + hCost;
         }
     }
+
+    //todo, think on caching results by key start/end
+    //todo, query to find path in async way and store in cache
 
     public static PathfindingResult findPath(PathfindingGraph graph, Vector2 start, Vector2 end) {
         // Snap start and end positions to tile centers for grid-based pathfinding
@@ -49,7 +53,7 @@ public class AStarPathfinder {
                 return new PathfindingResult(path, nodesChecked, openSet.size(), current.gCost);
             }
 
-            graph.addToClosedSet(closedSet,current.position);
+            graph.addToClosedSet(closedSet, current.position);
 
             // Check all neighbors
             for (Vector2 neighborPos : graph.getNeighbors(current.position)) {

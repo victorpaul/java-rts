@@ -1,7 +1,7 @@
 package io.github.mazs.movement;
 
 import com.badlogic.gdx.math.Vector2;
-import io.github.mazs.movement.hpa.TileUtils;
+import io.github.mazs.components.TileUtils;
 import io.github.mazs.units.Unit;
 import io.github.mazs.worlds.WorldRts;
 

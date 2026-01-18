@@ -156,10 +156,6 @@ public class GameScreen implements Screen {
         rtsController.addSelectedUnit(pawn1);
 
         Gdx.input.setInputProcessor(rtsController.createInputAdapter());
-
-        Gdx.app.log("GameScreen", "GameScreen initialized");
-        Gdx.app.log("GameScreen", "Camera view: " + WORLD_WIDTH + "x" + WORLD_HEIGHT);
-        Gdx.app.log("GameScreen", "Unit spawned at: " + unitX + ", " + unitY);
     }
 
     @Override

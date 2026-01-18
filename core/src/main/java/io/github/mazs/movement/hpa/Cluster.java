@@ -3,6 +3,7 @@ package io.github.mazs.movement.hpa;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import io.github.mazs.components.DebugDrawComponent;
+import io.github.mazs.components.TileUtils;
 import io.github.mazs.components.UnitsSpatialHashGrid;
 
 import java.util.ArrayList;
@@ -89,13 +90,13 @@ public class Cluster implements PathfindingGraph {
                     bottomLeftY + y * tileSize);
                 Vector2 outTile = new Vector2(inTile).add(neighborGateOffset);
 
-                Cluster neigbor = clustersManager.getClusterByTilePosition(outTile);
-                boolean inTileWalkable = sg.findUnitAt(inTile.x, inTile.y) == null;
-                boolean outTileWalkable = sg.findUnitAt(outTile.x, outTile.y) == null;
+                Cluster neighbor = clustersManager.getClusterByTilePosition(outTile);
+                boolean inTileWalkable = !sg.isBlockedByStaticUnit(inTile);
+                boolean outTileWalkable = !sg.isBlockedByStaticUnit(outTile);
 
-                if (neigbor != null && outTileWalkable && inTileWalkable) {
-                    if (tempGate == null) {
-                        tempGate = new Gate(new ArrayList<>(), neigbor, neighborGateOffset);
+                if (neighbor != null && outTileWalkable && inTileWalkable) {
+                    if (tempGate == null || tempGate.getTiles().size() >= 3) {
+                        tempGate = new Gate(new ArrayList<>(), neighbor, neighborGateOffset);
                         outGates.add(tempGate);
                     }
                     tempGate.addTile(inTile);
@@ -167,7 +168,7 @@ public class Cluster implements PathfindingGraph {
             Vector2 neighbor = new Vector2(node).add(dir);
 
             // Check if within cluster bounds and walkable
-            if (isWithinCluster(neighbor) && sg.findUnitAt(neighbor.x, neighbor.y) == null) {
+            if (isWithinCluster(neighbor) && !sg.isBlocked(neighbor)) {
                 neighbors.add(neighbor);
             }
         }

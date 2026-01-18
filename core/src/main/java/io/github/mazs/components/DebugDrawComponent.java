@@ -35,6 +35,7 @@ public class DebugDrawComponent {
     public DebugDrawComponent drawPath(List<Vector2> path, Color green, float v) {
         for (int i = 1; i < path.size(); i++) {
             drawLine(path.get(i - 1), path.get(i), green, v);
+            drawText(path.get(i - 1),"#"+(i-1),Color.BLACK,0.1f);
         }
 
         return this;

@@ -3,12 +3,11 @@ package io.github.mazs.components;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
+import io.github.mazs.movement.Moving;
 import io.github.mazs.units.Unit;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class UnitsSpatialHashGrid {
     private final int cellSize;
@@ -70,17 +69,37 @@ public class UnitsSpatialHashGrid {
     }
 
     public Unit findUnitAt(Vector2 tile) {
-        return findUnitAt(tile.x, tile.y);
-    }
-
-    public Unit findUnitAt(float x, float y) {
-        long key = getCellKey(x, y);
+        long key = getCellKey(tile.x, tile.y);
         List<Unit> cell = grid.get(key);
 
         if (cell != null && !cell.isEmpty()) {
             return cell.get(0);
         }
         return null;
+    }
+
+    public boolean isBlockedByStaticUnit(Vector2 position) {
+        return Optional.ofNullable(grid.get(getCellKey(position.x, position.y)))
+            .map(units -> {
+                for (Unit unit : units) {
+                    if (unit instanceof Moving) {
+                        return false;
+                    }
+                }
+                return true;
+            }).orElse(false);
+    }
+
+    public boolean isBlocked(Vector2 position) {
+        return Optional.ofNullable(grid.get(getCellKey(position.x, position.y)))
+            .map(units -> !units.isEmpty())
+            .orElse(false);
+    }
+
+    public boolean isBlockedByDynamic(Vector2 position) {
+        return Optional.ofNullable(grid.get(getCellKey(position.x, position.y)))
+            .map(units -> units.stream().allMatch(unit -> unit instanceof Moving))
+            .orElse(false);
     }
 
     public List<Unit> findUnitsInRectangle(float minX, float minY, float maxX, float maxY) {

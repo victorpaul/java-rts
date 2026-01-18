@@ -122,7 +122,7 @@ public class WorldRts {
     }
 
     public Unit findUnitAtPosition(float x, float y) {
-        return spatialGrid.findUnitAt(x, y);
+        return spatialGrid.findUnitAt(new Vector2(x, y));
     }
 
     public UnitsSpatialHashGrid getSpatialGrid() {

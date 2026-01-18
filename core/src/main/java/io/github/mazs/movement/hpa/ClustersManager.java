@@ -77,19 +77,38 @@ public class ClustersManager implements PathfindingGraph {
 
     @Override
     public boolean isGoalReached(Vector2 position, Vector2 end) {
-        Cluster currentCluster = getClusterByTilePosition(position);
-        Cluster goalCluster = getClusterByTilePosition(end);
-        return currentCluster == goalCluster;
+
+        return Optional.ofNullable(getClusterByTilePosition(position))
+            .map(c -> c.getGateByPosition(position))
+            .map(g -> {
+
+                if (g.getNeighborCluster() == getClusterByTilePosition(end)) {
+                    Gate neighborGate = g.getNeighborGate(this);
+                    PathfindingResult result = AStarPathfinder.findPath(
+                        g.getNeighborCluster(), neighborGate.getMiddlePoint(), end);
+                    return result.isSuccess();
+
+                }
+                return false;
+            })
+            .orElseGet(() -> false);
     }
 
     @Override
     public void addToClosedSet(Set<Long> closedSet, Vector2 position) {
         // todo, improve this one if performance issue
-        // stupid workaround to mark node as passed, as node is made of two gates actually
-        // that are on the edges of cluster touching each another
-        Optional.of(getClusterByTilePosition(position))
+        // stupid workaround to mark node as passed, as in this case node is cluster gate
+        // and it is uniq only in range of the same cluster, gate from another side of neighbor is logically the same node,
+        // but it has different position
+        // so, workaround to avoid passing same gates twice, it to add to closed set bot gates that form node
+
+        // find cluster where this gate(node) is
+        Optional.ofNullable(getClusterByTilePosition(position))
+            // find gate object
             .map(cluster -> cluster.getGateByPosition(position))
+            // extract gate on another side in neighbor cluster, which connected to this one
             .map(gate -> gate.getNeighborGate(this))
+            // also add it to closed set
             .ifPresent(neighborGate -> {
                 PathfindingGraph.super.addToClosedSet(closedSet, neighborGate.getMiddlePoint());
             });
@@ -106,36 +125,70 @@ public class ClustersManager implements PathfindingGraph {
             return new LinkedList<>();
         }
 
-        Gate gate = cluster.getGateByPosition(location);
-        if (gate != null) {
-            // we got gates by location, return gates we can reach from neighbor clusters
-            return gate.getReachableGates().keySet().stream()
-                .map(g -> g.getNeighborGate(this))
-                .filter(Objects::nonNull)
+        Optional<Gate> neighborGate = Optional
+            .ofNullable(cluster.getGateByPosition(location))
+            .map(gate -> gate.getNeighborGate(this));
+
+        // we get local gate in cluster
+        // get neighbor gate from neighbor cluster
+        // and find reachable gates from neighbor cluster
+        return neighborGate.map(gate -> gate.getReachableGates().keySet().stream()
                 .map(Gate::getMiddlePoint)
-                .collect(Collectors.toList());
-        } else {
+                .collect(Collectors.toList()))
+
             // we are somewhere in the cluster
-            // lets calculate gates we can reach in the cluster and convert them to neighbor gates location
-            return cluster.getGates().stream().map(g -> {
+            // lets calculate gates we can reach
+            .orElseGet(() -> cluster.getGates().stream().map(g -> {
                     PathfindingResult pathResult = AStarPathfinder.findPath(
                         cluster,
                         location,
                         g.getMiddlePoint()
                     );
                     return pathResult.isSuccess()
-                        ? g.getNeighborGate(this)
+                        ? g
                         : null;
                 })
                 .filter(Objects::nonNull)
                 .map(Gate::getMiddlePoint)
-                .collect(Collectors.toList());
-        }
+                .collect(Collectors.toList()));
     }
 
     @Override
     public float getCost(Vector2 from, Vector2 to) {
-        return from.dst(to);
+        Cluster clusterFrom = getClusterByTilePosition(from);
+        Gate gateFrom = clusterFrom.getGateByPosition(from);
+
+        // we calculate gate to gate cost
+        if (gateFrom != null) {
+            return Optional.ofNullable(gateFrom.getNeighborGate(this))
+                .map(gateA -> {
+                    Gate gateB = getGate(to);
+                    return gateA
+                        .getReachableGates()
+                        .get(gateB);
+                })
+                .orElseGet(() -> {
+                    DebugDrawComponent
+                        .getInstance()
+                        .drawLine(from, to, Color.RED, 10f);
+                    return Float.MAX_VALUE;
+                });
+        } else {
+            // we calculate cost from somewhere in the cluster to gate
+            PathfindingResult result = AStarPathfinder.findPath(clusterFrom, from, to);
+            if (result.isSuccess()) {
+                return result.getPathCost();
+            }
+        }
+
+        return Float.MAX_VALUE;
+    }
+
+    private Gate getGate(Vector2 to) {
+        return Optional
+            .ofNullable(getClusterByTilePosition(to))
+            .map(c -> c.getGateByPosition(to))
+            .orElse(null);
     }
 
     @Override

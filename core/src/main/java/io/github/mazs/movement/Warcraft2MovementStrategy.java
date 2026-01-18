@@ -2,7 +2,7 @@ package io.github.mazs.movement;
 
 import com.badlogic.gdx.math.Vector2;
 import io.github.mazs.components.UnitsSpatialHashGrid;
-import io.github.mazs.movement.hpa.TileUtils;
+import io.github.mazs.components.TileUtils;
 import io.github.mazs.units.Unit;
 
 import static io.github.mazs.worlds.WorldRts.TILE_SIZE;
@@ -140,7 +140,7 @@ public class Warcraft2MovementStrategy implements IMovementStrategy {
     }
 
     private boolean isTileBlocked(Unit owner, Vector2 tilePosition) {
-        Unit unitAtTile = owner.getWorld().getSpatialGrid().findUnitAt(tilePosition.x, tilePosition.y);
+        Unit unitAtTile = owner.getWorld().getSpatialGrid().findUnitAt(tilePosition);
         boolean hasUnit = unitAtTile != null && unitAtTile != owner;
 
         // Prevent moving back to the exact tile we just came from

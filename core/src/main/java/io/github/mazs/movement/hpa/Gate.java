@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import io.github.mazs.components.DebugDrawComponent;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +35,7 @@ public class Gate {
         tiles.add(tile);
     }
 
+    //todo, cache neighbor gate
     public Gate getNeighborGate(ClustersManager clustersManager) {
         Vector2 neighborGatePosition = new Vector2(getMiddlePoint()).add(direction);
         Cluster neighborCluster = clustersManager.getClusterByTilePosition(neighborGatePosition);
@@ -65,5 +67,9 @@ public class Gate {
             DebugDrawComponent.getInstance().drawRectangle(tile, 4, Color.BLUE, 0.1f);
         });
         DebugDrawComponent.getInstance().drawRectangle(getMiddlePoint(), 6, Color.BLUE, 0.1f);
+    }
+
+    public Cluster getNeighborCluster() {
+        return neighborCluster;
     }
 }

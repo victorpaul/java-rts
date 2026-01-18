@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import java.util.List;
 import java.util.Set;
 
-import static io.github.mazs.movement.hpa.TileUtils.positionToKey;
+import static io.github.mazs.components.TileUtils.positionToKey;
 
 public interface PathfindingGraph {
     List<Vector2> getNeighbors(Vector2 node);

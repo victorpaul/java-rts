@@ -1,16 +1,19 @@
 package io.github.mazs.movement;
 
 import com.badlogic.gdx.math.Vector2;
-import io.github.mazs.movement.hpa.TileUtils;
+import io.github.mazs.components.TileUtils;
 import io.github.mazs.units.Unit;
+
+import java.util.Optional;
+
+import static io.github.mazs.components.TileUtils.hasReachedTile;
 
 public class UnitMovementComponent {
     private Unit owner;
     private final Vector2 finalTargetPosition;
     private final Vector2 currentTargetTile;
     private float movementSpeed;
-    private static final float ARRIVAL_THRESHOLD = 2f;
-    private IMovementStrategy movementStrategy;
+    private final IMovementStrategy movementStrategy;
 
     private final Vector2 tempDirection = new Vector2();
 
@@ -19,7 +22,10 @@ public class UnitMovementComponent {
         this.movementSpeed = movementSpeed;
         this.finalTargetPosition = new Vector2(owner.getPosition());
         this.currentTargetTile = new Vector2(owner.getPosition());
-        this.movementStrategy = new Warcraft2MovementStrategy();
+        this.movementStrategy = new HpaPathFindingStrategy(
+            owner.getWorld().getClustersManager(),
+            owner.getWorld().getSpatialGrid()
+        );
     }
 
     public void update(float delta) {
@@ -37,12 +43,8 @@ public class UnitMovementComponent {
         }
 
         // Step 3: Calculate next tile using movement strategy
-        Vector2 nextTile = movementStrategy.calculateNextCell(owner, finalTargetPosition);
-        currentTargetTile.set(nextTile);
-    }
-
-    private boolean hasReachedTile(Vector2 position, Vector2 targetTile) {
-        return position.dst(targetTile) <= ARRIVAL_THRESHOLD;
+        Optional.ofNullable(movementStrategy.calculateNextCell(owner, finalTargetPosition))
+            .ifPresent(currentTargetTile::set);
     }
 
     private void moveTowardsTile(float delta) {
@@ -69,7 +71,7 @@ public class UnitMovementComponent {
     }
 
     public boolean isMoving(Vector2 currentPosition) {
-        return currentPosition.dst(finalTargetPosition) > ARRIVAL_THRESHOLD;
+        return !hasReachedTile(currentPosition, finalTargetPosition);
     }
 
 }
