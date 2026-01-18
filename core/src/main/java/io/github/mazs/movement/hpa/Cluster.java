@@ -168,7 +168,8 @@ public class Cluster implements PathfindingGraph {
             Vector2 neighbor = new Vector2(node).add(dir);
 
             // Check if within cluster bounds and walkable
-            if (isWithinCluster(neighbor) && !sg.isBlocked(neighbor)) {
+            //todo, change to checking against dynamic unit, we want units to avoid each another
+            if (isWithinCluster(neighbor) && !sg.isBlockedByStaticUnit(neighbor)) {
                 neighbors.add(neighbor);
             }
         }

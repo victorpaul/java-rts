@@ -3,25 +3,23 @@ package io.github.mazs;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ExtendViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
 import io.github.mazs.components.StatsComponent;
 import io.github.mazs.controllers.RtsController;
+import io.github.mazs.movement.hpa.Cluster;
+import io.github.mazs.movement.hpa.Gate;
 import io.github.mazs.units.Pawn;
 import io.github.mazs.units.Tree;
 import io.github.mazs.units.Unit;
 import io.github.mazs.worlds.WorldRts;
 
+import java.util.List;
+import java.util.Random;
+
 public class GameScreen implements Screen {
     private final Main game;
-    private OrthographicCamera camera;
     private OrthographicCamera uiCamera;
-    private Viewport viewport;
-
-    private static final float CAMERA_ZOOM = 0.5f;
-    private static final float WORLD_WIDTH = 853f * CAMERA_ZOOM;  // 1280 / 1.5 for 1.5x zoom
-    private static final float WORLD_HEIGHT = 480f * CAMERA_ZOOM;  // 720 / 1.5 for 1.5x zoom
 
     private WorldRts world;
 
@@ -32,130 +30,175 @@ public class GameScreen implements Screen {
         this.game = game;
     }
 
+    private static final long OBSTACLE_SEED = 12345L;
+
     /**
-     * Create tree border and structured obstacle patterns (T, L, I shapes).
+     * Create tree border and random obstacle patterns (T, L, I shapes) in each cluster.
      */
-    private void createObstaclePatterns(WorldRts world, float centerX, float centerY) {
+    private void createObstaclePatterns(WorldRts world) {
         final int TILE = WorldRts.TILE_SIZE;
-        final int MAP_WIDTH_TILES = 40;
-        final int MAP_HEIGHT_TILES = 23;
+        final int mapWidthTiles = world.getWorldWidthTiles();
+        final int mapHeightTiles = world.getWorldHeightTiles();
 
         // Tree border around the map
+        createBorder(world, TILE, mapWidthTiles, mapHeightTiles);
+
+        // Generate random obstacles in each cluster
+        Random random = new Random(OBSTACLE_SEED);
+        int clusterSize = 10; // tiles per cluster
+        int clustersX = (int) Math.ceil((double) mapWidthTiles / clusterSize);
+        int clustersY = (int) Math.ceil((double) mapHeightTiles / clusterSize);
+
+        for (int cx = 0; cx < clustersX; cx++) {
+            for (int cy = 0; cy < clustersY; cy++) {
+                int obstacleCount = 1 + random.nextInt(5); // 1-3 obstacles per cluster
+                for (int o = 0; o < obstacleCount; o++) {
+                    createRandomObstacle(world, random, cx, cy, clusterSize, TILE, clustersX, clustersY);
+                }
+            }
+        }
+    }
+
+    private void createBorder(WorldRts world, int TILE, int mapWidthTiles, int mapHeightTiles) {
         // Bottom border
-        for (int x = 0; x < MAP_WIDTH_TILES; x++) {
+        for (int x = 0; x < mapWidthTiles; x++) {
             world.addUnit(new Tree(world, x * TILE + TILE / 2f, TILE / 2f));
         }
         // Top border
-        for (int x = 0; x < MAP_WIDTH_TILES; x++) {
-            world.addUnit(new Tree(world, x * TILE + TILE / 2f, (MAP_HEIGHT_TILES - 1) * TILE + TILE / 2f));
+        for (int x = 0; x < mapWidthTiles; x++) {
+            world.addUnit(new Tree(world, x * TILE + TILE / 2f, (mapHeightTiles - 1) * TILE + TILE / 2f));
         }
-        // Left border (excluding corners already placed)
-        for (int y = 1; y < MAP_HEIGHT_TILES - 1; y++) {
+        // Left border (excluding corners)
+        for (int y = 1; y < mapHeightTiles - 1; y++) {
             world.addUnit(new Tree(world, TILE / 2f, y * TILE + TILE / 2f));
         }
-        // Right border (excluding corners already placed)
-        for (int y = 1; y < MAP_HEIGHT_TILES - 1; y++) {
-            world.addUnit(new Tree(world, (MAP_WIDTH_TILES - 1) * TILE + TILE / 2f, y * TILE + TILE / 2f));
+        // Right border (excluding corners)
+        for (int y = 1; y < mapHeightTiles - 1; y++) {
+            world.addUnit(new Tree(world, (mapWidthTiles - 1) * TILE + TILE / 2f, y * TILE + TILE / 2f));
+        }
+    }
+
+    private void createRandomObstacle(WorldRts world, Random random, int clusterX, int clusterY,
+                                       int clusterSize, int TILE, int clustersX, int clustersY) {
+        // Calculate cluster bounds in world coordinates
+        float clusterStartX = clusterX * clusterSize * TILE;
+        float clusterStartY = clusterY * clusterSize * TILE;
+
+        // Adjust margins for edge clusters (extra margin near world borders)
+        int marginLeft = (clusterX == 0) ? 3 : 2;
+        int marginRight = (clusterX == clustersX - 1) ? 3 : 2;
+        int marginBottom = (clusterY == 0) ? 3 : 2;
+        int marginTop = (clusterY == clustersY - 1) ? 3 : 2;
+
+        int availableX = clusterSize - marginLeft - marginRight;
+        int availableY = clusterSize - marginBottom - marginTop;
+
+        // Skip if not enough space
+        if (availableX < 2 || availableY < 2) {
+            return;
         }
 
-        // T-shaped obstacle (top-left area)
-        float tX = centerX - 120;
-        float tY = centerY + 40;
-        // Horizontal bar of T
-        for (int i = 0; i < 7; i++) {
-            world.addUnit(new Tree(world, tX + i * TILE, tY));
+        float x = clusterStartX + (marginLeft + random.nextInt(availableX)) * TILE + TILE / 2f;
+        float y = clusterStartY + (marginBottom + random.nextInt(availableY)) * TILE + TILE / 2f;
+
+        int shapeType = random.nextInt(3); // 0=T, 1=L, 2=I
+        int size = 2 + random.nextInt(3); // 2-4 tiles
+
+        switch (shapeType) {
+            case 0: createTShape(world, x, y, size, TILE, random.nextBoolean()); break;
+            case 1: createLShape(world, x, y, size, TILE, random.nextInt(4)); break;
+            case 2: createIShape(world, x, y, size, TILE, random.nextBoolean()); break;
         }
-        // Vertical stem of T
-        for (int i = 1; i < 5; i++) {
-            world.addUnit(new Tree(world, tX + 3 * TILE, tY - i * TILE));
+    }
+
+    private void createTShape(WorldRts world, float x, float y, int size, int TILE, boolean vertical) {
+        if (vertical) {
+            // Vertical T
+            for (int i = 0; i < size; i++) {
+                world.addUnit(new Tree(world, x, y + i * TILE));
+            }
+            for (int i = 1; i <= size / 2; i++) {
+                world.addUnit(new Tree(world, x - i * TILE, y + (size / 2) * TILE));
+                world.addUnit(new Tree(world, x + i * TILE, y + (size / 2) * TILE));
+            }
+        } else {
+            // Horizontal T
+            for (int i = 0; i < size; i++) {
+                world.addUnit(new Tree(world, x + i * TILE, y));
+            }
+            for (int i = 1; i <= size / 2; i++) {
+                world.addUnit(new Tree(world, x + (size / 2) * TILE, y - i * TILE));
+                world.addUnit(new Tree(world, x + (size / 2) * TILE, y + i * TILE));
+            }
+        }
+    }
+
+    private void createLShape(WorldRts world, float x, float y, int size, int TILE, int rotation) {
+        // rotation: 0=normal, 1=90deg, 2=180deg, 3=270deg
+        int dx1 = 0, dy1 = 1, dx2 = 1, dy2 = 0;
+        switch (rotation) {
+            case 1: dx1 = -1; dy1 = 0; dx2 = 0; dy2 = 1; break;
+            case 2: dx1 = 0; dy1 = -1; dx2 = -1; dy2 = 0; break;
+            case 3: dx1 = 1; dy1 = 0; dx2 = 0; dy2 = -1; break;
         }
 
-        // L-shaped obstacle (top-right area)
-        float lX = centerX + 80;
-        float lY = centerY + 40;
-        // Vertical part of L
-        for (int i = 0; i < 6; i++) {
-            world.addUnit(new Tree(world, lX, lY - i * TILE));
+        for (int i = 0; i < size; i++) {
+            world.addUnit(new Tree(world, x + dx1 * i * TILE, y + dy1 * i * TILE));
         }
-        // Horizontal part of L
-        for (int i = 1; i < 5; i++) {
-            world.addUnit(new Tree(world, lX + i * TILE, lY - 5 * TILE));
+        for (int i = 1; i < size; i++) {
+            world.addUnit(new Tree(world, x + dx2 * i * TILE, y + dy2 * i * TILE));
         }
+    }
 
-        // I-shaped obstacle (vertical, center-left)
-        float iX = centerX - 80;
-        float iY = centerY - 60;
-        for (int i = 0; i < 8; i++) {
-            world.addUnit(new Tree(world, iX, iY + i * TILE));
-        }
-
-        // I-shaped obstacle (horizontal, bottom-center)
-        float iX2 = centerX - 40;
-        float iY2 = centerY - 60;
-        for (int i = 0; i < 10; i++) {
-            world.addUnit(new Tree(world, iX2 + i * TILE, iY2));
-        }
-
-        // T-shaped obstacle (center of map)
-        float centerTX = centerX +200;
-        float centerTY = centerY+200;
-        // Horizontal bar of T
-        for (int i = 0; i < 5; i++) {
-            world.addUnit(new Tree(world, centerTX - 2 * TILE + i * TILE, centerTY));
-        }
-        // Vertical stem of T
-        for (int i = 1; i < 4; i++) {
-            world.addUnit(new Tree(world, centerTX, centerTY - i * TILE));
-        }
-
-        // L-shaped obstacle (top-right, near corner)
-        float topRightLX = centerX + 340;
-        float topRightLY = centerY + 200;
-        // Vertical part
-        for (int i = 0; i < 4; i++) {
-            world.addUnit(new Tree(world, topRightLX, topRightLY - i * TILE));
-        }
-        // Horizontal part
-        for (int i = 1; i < 4; i++) {
-            world.addUnit(new Tree(world, topRightLX - i * TILE, topRightLY));
-        }
-
-        // Small I-shaped obstacle (top-right area)
-        float topRightIX = centerX + 120;
-        float topRightIY = centerY + 50;
-        for (int i = 0; i < 5; i++) {
-            world.addUnit(new Tree(world, topRightIX + i * TILE, topRightIY));
+    private void createIShape(WorldRts world, float x, float y, int size, int TILE, boolean vertical) {
+        for (int i = 0; i < size; i++) {
+            if (vertical) {
+                world.addUnit(new Tree(world, x, y + i * TILE));
+            } else {
+                world.addUnit(new Tree(world, x + i * TILE, y));
+            }
         }
     }
 
     @Override
     public void show() {
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
-
         uiCamera = new OrthographicCamera();
         uiCamera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
-        viewport = new ExtendViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
-
         world = new WorldRts();
 
-        float unitX = WORLD_WIDTH / 2;
-        float unitY = WORLD_HEIGHT / 2;
+        // Create obstacle patterns for testing pathfinding
+        createObstaclePatterns(world);
 
-        // Create test units
-        Unit pawn1 = new Pawn(world, unitX + 150, unitY);
+        // Generate clusters after obstacles are placed
+        world.getClustersManager().generateClusters();
+
+        // Spawn unit at first gate of cluster (1,1) to avoid border trees
+        Vector2 spawnPosition = getSpawnPositionFromCluster(0, 0);
+        Unit pawn1 = new Pawn(world, spawnPosition.x, spawnPosition.y);
         world.addUnit(pawn1);
 
-        // Create obstacle patterns for testing pathfinding
-        createObstaclePatterns(world, unitX, unitY);
-        world.getClustersManager().generateClusters();
         stats = new StatsComponent();
-
-        rtsController = new RtsController(world, camera, stats);
+        rtsController = new RtsController(world, stats);
         rtsController.addSelectedUnit(pawn1);
 
         Gdx.input.setInputProcessor(rtsController.createInputAdapter());
+    }
+
+    private Vector2 getSpawnPositionFromCluster(int clusterX, int clusterY) {
+        Cluster cluster = world.getClustersManager().getCluster(clusterX, clusterY);
+        if (cluster != null) {
+            List<Gate> gates = cluster.getGates();
+            if (!gates.isEmpty()) {
+                return gates.get(0).getMiddlePoint();
+            }
+        }
+        // Fallback to cluster center if no gates
+        int clusterWorldSize = WorldRts.TILE_SIZE * 10; // clusterCellsSize = 10
+        return new Vector2(
+            clusterX * clusterWorldSize + clusterWorldSize / 2f,
+            clusterY * clusterWorldSize + clusterWorldSize / 2f
+        );
     }
 
     @Override
@@ -169,8 +212,8 @@ public class GameScreen implements Screen {
         world.update(delta);
         stats.endUpdate();
 
-        camera.update();
-        game.batch.setProjectionMatrix(camera.combined);
+        rtsController.getCamera().update();
+        game.batch.setProjectionMatrix(rtsController.getCamera().combined);
 
         stats.beginRender();
         game.batch.begin();
@@ -191,7 +234,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
+        rtsController.getViewport().update(width, height, true);
         uiCamera.setToOrtho(false, width, height);
         uiCamera.update();
     }

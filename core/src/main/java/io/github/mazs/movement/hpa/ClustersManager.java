@@ -58,6 +58,11 @@ public class ClustersManager implements PathfindingGraph {
         return unitsSpatialHashGrid;
     }
 
+    public Cluster getCluster(int clusterX, int clusterY) {
+        long key = getClusterKey(clusterX, clusterY);
+        return clustersMap.get(key);
+    }
+
     public Cluster getClusterByTilePosition(Vector2 xy) {
         return getClusterByTilePosition(xy.x, xy.y);
     }

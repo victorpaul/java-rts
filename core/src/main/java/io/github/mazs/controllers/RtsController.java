@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import io.github.mazs.components.StatsComponent;
 import io.github.mazs.effects.LeftClickEffect;
 import io.github.mazs.effects.RightClickEffect;
@@ -20,9 +22,13 @@ import java.util.List;
 
 public class RtsController {
     private static final float CAMERA_SPEED = 300f;
+    private static final float CAMERA_ZOOM = 0.5f;
+    private static final float VIEWPORT_WIDTH = 853f * CAMERA_ZOOM;
+    private static final float VIEWPORT_HEIGHT = 480f * CAMERA_ZOOM;
 
     private WorldRts world;
     private OrthographicCamera camera;
+    private Viewport viewport;
     private StatsComponent stats;
 
     private List<Unit> selectedUnits = new ArrayList<>();
@@ -31,10 +37,21 @@ public class RtsController {
     private float dragStartX, dragStartY;
     private float dragCurrentX, dragCurrentY;
 
-    public RtsController(WorldRts world, OrthographicCamera camera, StatsComponent stats) {
+    public RtsController(WorldRts world, StatsComponent stats) {
         this.world = world;
-        this.camera = camera;
         this.stats = stats;
+
+        camera = new OrthographicCamera();
+        camera.setToOrtho(false, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+        viewport = new ExtendViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, camera);
+    }
+
+    public OrthographicCamera getCamera() {
+        return camera;
+    }
+
+    public Viewport getViewport() {
+        return viewport;
     }
 
     public void update(float delta) {
