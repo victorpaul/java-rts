@@ -80,14 +80,8 @@ public class UnitsSpatialHashGrid {
 
     public boolean isBlockedByStaticUnit(Vector2 position) {
         return Optional.ofNullable(grid.get(getCellKey(position.x, position.y)))
-            .map(units -> {
-                for (Unit unit : units) {
-                    if (unit instanceof Moving) {
-                        return false;
-                    }
-                }
-                return true;
-            }).orElse(false);
+            .map(units -> !units.stream().allMatch(unit -> unit instanceof Moving))
+            .orElse(false);
     }
 
     public boolean isBlocked(Vector2 position) {

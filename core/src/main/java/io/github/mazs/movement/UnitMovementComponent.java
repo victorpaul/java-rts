@@ -2,6 +2,7 @@ package io.github.mazs.movement;
 
 import com.badlogic.gdx.math.Vector2;
 import io.github.mazs.components.TileUtils;
+import io.github.mazs.movement.hpa.HpaPathFindingStrategy;
 import io.github.mazs.units.Unit;
 
 import java.util.Optional;

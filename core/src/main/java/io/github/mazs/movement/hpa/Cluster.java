@@ -169,7 +169,7 @@ public class Cluster implements PathfindingGraph {
 
             // Check if within cluster bounds and walkable
             //todo, change to checking against dynamic unit, we want units to avoid each another
-            if (isWithinCluster(neighbor) && !sg.isBlockedByStaticUnit(neighbor)) {
+            if (isWithinCluster(neighbor) && !sg.isBlocked(neighbor)) {
                 neighbors.add(neighbor);
             }
         }

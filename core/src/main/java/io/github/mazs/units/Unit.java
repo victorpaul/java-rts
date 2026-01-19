@@ -17,9 +17,9 @@ public abstract class Unit {
     protected final int renderYOffset;
     private boolean pendingDestroy = false;
 
-    public Unit(WorldRts world, float x, float y, int renderSize, int renderYOffset) {
+    public Unit(WorldRts world, Vector2 position, int renderSize, int renderYOffset) {
         this.world = world;
-        this.position = new Vector2(x, y);
+        this.position = position    ;
         this.renderSize = renderSize;
         this.renderYOffset = renderYOffset;
 

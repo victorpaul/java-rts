@@ -163,8 +163,6 @@ public class RtsController {
                                 clickedUnit.getPosition().y));
                             selectedUnits.clear();
                             selectedUnits.add(clickedUnit);
-                        } else {
-                            selectedUnits.clear();
                         }
                     } else {
                         // multiple select

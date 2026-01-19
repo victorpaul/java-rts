@@ -2,6 +2,7 @@ package io.github.mazs.units;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import io.github.mazs.worlds.WorldRts;
 
 public class Tree extends Unit {
@@ -9,7 +10,7 @@ public class Tree extends Unit {
     private final Animation<TextureRegion> idleAnimation;
 
     public Tree(WorldRts world, float x, float y) {
-        super(world, x, y,
+        super(world, new Vector2(x, y),
             64,
             20);
         idleAnimation = createAnimation(

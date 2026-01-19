@@ -1,10 +1,10 @@
-package io.github.mazs.movement;
+package io.github.mazs.movement.hpa;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import io.github.mazs.components.DebugDrawComponent;
 import io.github.mazs.components.UnitsSpatialHashGrid;
-import io.github.mazs.movement.hpa.*;
+import io.github.mazs.movement.IMovementStrategy;
 import io.github.mazs.units.Unit;
 
 import java.util.List;
@@ -16,7 +16,7 @@ public class HpaPathFindingStrategy implements IMovementStrategy {
     private final ClustersManager clustersManager;
     private final UnitsSpatialHashGrid unitsSpatialHashGrid;
     private List<Vector2> cachedGlobalPath;
-    private List<Vector2> cachedLocalPath;
+//    private List<Vector2> cachedLocalPath;
 
     public HpaPathFindingStrategy(ClustersManager clustersManager, UnitsSpatialHashGrid unitsSpatialHashGrid) {
         this.clustersManager = clustersManager;
@@ -26,7 +26,7 @@ public class HpaPathFindingStrategy implements IMovementStrategy {
     @Override
     public void resetState() {
         cachedGlobalPath = null;
-        cachedLocalPath = null;
+//        cachedLocalPath = null;
     }
 
     @Override
@@ -37,21 +37,20 @@ public class HpaPathFindingStrategy implements IMovementStrategy {
         Cluster toCluster = clustersManager.getClusterByTilePosition(targetFinalPosition);
 
         if (currentCluster == toCluster) {
-            if (cachedLocalPath == null) {
-                PathfindingResult localPath = AStarPathfinder.findPath(
-                    currentCluster,
-                    position,
-                    targetFinalPosition);
-                if (localPath.isSuccess()) {
-                    cachedLocalPath = localPath.getPath();
-                    DebugDrawComponent.getInstance()
-                        .drawPath(cachedLocalPath, Color.BLUE, 3f);
-                }
-            }
 
-            Vector2 nextTile = cachedLocalPath.get(0);
-            cachedLocalPath.remove(0);
-            return nextTile;
+            PathfindingResult localPath = AStarPathfinder.findPath(
+                currentCluster,
+                position,
+                targetFinalPosition);
+            if (localPath.isSuccess()) {
+                DebugDrawComponent.getInstance()
+                    .drawPath(localPath.getPath(), Color.BLUE, 1f);
+                return localPath.getPath().get(1);
+//                cachedLocalPath = localPath.getPath();
+            }
+//            Vector2 nextTile = cachedLocalPath.get(0);
+//            cachedLocalPath.remove(0);
+//            return nextTile;
         }
 
         List<Vector2> globalPath = getGlobalPath(position, targetFinalPosition);
@@ -61,8 +60,7 @@ public class HpaPathFindingStrategy implements IMovementStrategy {
             // we reached global node, clear local path
             if (atGlobalNode(globalPath, position)) {
                 globalPath.remove(0);
-                cachedLocalPath = null;
-
+//                cachedLocalPath = null;
                 // if we are at the gate, return tile of next gate in neighbor cluster
                 Gate gate = currentCluster.getGateByPosition(position);
                 if (gate != null) {
@@ -70,21 +68,16 @@ public class HpaPathFindingStrategy implements IMovementStrategy {
                 }
             }
 
-            if (cachedLocalPath == null) {
-                PathfindingResult localPath = AStarPathfinder.findPath(
-                    currentCluster,
-                    owner.getPosition(),
-                    globalPath.isEmpty() ? targetFinalPosition : globalPath.get(0));
-                if (localPath.isSuccess()) {
-                    cachedLocalPath = localPath.getPath();
-                    DebugDrawComponent.getInstance()
-                        .drawPath(cachedLocalPath, Color.RED, 3f);
-                }
-            } else {
-                Vector2 nextTile = cachedLocalPath.get(0);
-                cachedLocalPath.remove(0);
-                return nextTile;
+            PathfindingResult localPath = AStarPathfinder.findPath(
+                currentCluster,
+                owner.getPosition(),
+                globalPath.isEmpty() ? targetFinalPosition : globalPath.get(0));
+            if (localPath.isSuccess()) {
+                DebugDrawComponent.getInstance()
+                    .drawPath(localPath.getPath(), Color.RED, 1f);
+                return localPath.getPath().get(1);
             }
+
         }
         return null;
 

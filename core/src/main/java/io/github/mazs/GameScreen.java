@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.mazs.components.StatsComponent;
 import io.github.mazs.controllers.RtsController;
 import io.github.mazs.movement.hpa.Cluster;
+import io.github.mazs.movement.hpa.ClustersManager;
 import io.github.mazs.movement.hpa.Gate;
 import io.github.mazs.units.Pawn;
 import io.github.mazs.units.Tree;
@@ -173,32 +174,28 @@ public class GameScreen implements Screen {
         // Generate clusters after obstacles are placed
         world.getClustersManager().generateClusters();
 
-        // Spawn unit at first gate of cluster (1,1) to avoid border trees
-        Vector2 spawnPosition = getSpawnPositionFromCluster(0, 0);
-        Unit pawn1 = new Pawn(world, spawnPosition.x, spawnPosition.y);
-        world.addUnit(pawn1);
-
         stats = new StatsComponent();
         rtsController = new RtsController(world, stats);
+
+        // Spawn unit at first gate of cluster (1,1) to avoid border trees
+        ClustersManager cm = world.getClustersManager();
+
+        Gate gate000 = cm.getCluster(0,0).getGates().get(0);
+        Unit pawn1 = new Pawn(world, gate000.getMiddlePoint());
+        world.addUnit(pawn1);
         rtsController.addSelectedUnit(pawn1);
 
-        Gdx.input.setInputProcessor(rtsController.createInputAdapter());
-    }
+        Gate gate001 = cm.getCluster(0,0).getGates().get(1);
+        Gate gate102 = cm.getCluster(1,0).getGates().get(3);
+        Pawn pawn2 = new Pawn(world, gate001.getMiddlePoint());
+        pawn2.patrol(gate102.getMiddlePoint());
+        world.addUnit(pawn2);
 
-    private Vector2 getSpawnPositionFromCluster(int clusterX, int clusterY) {
-        Cluster cluster = world.getClustersManager().getCluster(clusterX, clusterY);
-        if (cluster != null) {
-            List<Gate> gates = cluster.getGates();
-            if (!gates.isEmpty()) {
-                return gates.get(0).getMiddlePoint();
-            }
-        }
-        // Fallback to cluster center if no gates
-        int clusterWorldSize = WorldRts.TILE_SIZE * 10; // clusterCellsSize = 10
-        return new Vector2(
-            clusterX * clusterWorldSize + clusterWorldSize / 2f,
-            clusterY * clusterWorldSize + clusterWorldSize / 2f
-        );
+        Pawn pawn3 = new Pawn(world, gate102.getMiddlePoint());
+        pawn3.patrol(gate001.getMiddlePoint());
+        world.addUnit(pawn3);
+
+        Gdx.input.setInputProcessor(rtsController.createInputAdapter());
     }
 
     @Override
